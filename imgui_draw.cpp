@@ -1,4 +1,4 @@
-// dear imgui, v1.91.8 WIP
+// dear imgui, v1.91.9 WIP
 // (drawing and font code)
 
 /*
@@ -374,6 +374,7 @@ void ImGui::StyleColorsLight(ImGuiStyle* dst)
 ImDrawListSharedData::ImDrawListSharedData()
 {
     memset(this, 0, sizeof(*this));
+    InitialFringeScale = 1.0f;
     for (int i = 0; i < IM_ARRAYSIZE(ArcFastVtx); i++)
     {
         const float a = ((float)i * 2 * IM_PI) / (float)IM_ARRAYSIZE(ArcFastVtx);
@@ -433,7 +434,7 @@ void ImDrawList::_ResetForNewFrame()
     _Path.resize(0);
     _Splitter.Clear();
     CmdBuffer.push_back(ImDrawCmd());
-    _FringeScale = 1.0f;
+    _FringeScale = _Data->InitialFringeScale;
 }
 
 void ImDrawList::_ClearFreeMemory()
@@ -3349,7 +3350,7 @@ void ImFontAtlasBuildFinish(ImFontAtlas* atlas)
         if (r->Font == NULL || r->GlyphID == 0)
             continue;
 
-        // Will ignore ImFontConfig settings: GlyphMinAdvanceX, GlyphMinAdvanceY, GlyphExtraSpacing, PixelSnapH
+        // Will ignore ImFontConfig settings: GlyphMinAdvanceX, GlyphMinAdvanceY, PixelSnapH
         IM_ASSERT(r->Font->ContainerAtlas == atlas);
         ImVec2 uv0, uv1;
         atlas->CalcCustomRectUV(r, &uv0, &uv1);
@@ -3685,21 +3686,8 @@ void ImFontGlyphRangesBuilder::BuildRanges(ImVector<ImWchar>* out_ranges)
 
 ImFont::ImFont()
 {
-    FontSize = 0.0f;
-    FallbackAdvanceX = 0.0f;
-    FallbackChar = 0;
-    EllipsisChar = 0;
-    EllipsisWidth = EllipsisCharStep = 0.0f;
-    EllipsisCharCount = 0;
-    FallbackGlyph = NULL;
-    ContainerAtlas = NULL;
-    ConfigData = NULL;
-    ConfigDataCount = 0;
-    DirtyLookupTables = false;
+    memset(this, 0, sizeof(*this));
     Scale = 1.0f;
-    Ascent = Descent = 0.0f;
-    MetricsTotalSurface = 0;
-    memset(Used8kPagesMap, 0, sizeof(Used8kPagesMap));
 }
 
 ImFont::~ImFont()
@@ -3770,8 +3758,10 @@ void ImFont::BuildLookupTable()
     }
 
     // Mark special glyphs as not visible (note that AddGlyph already mark as non-visible glyphs with zero-size polygons)
-    SetGlyphVisible((ImWchar)' ', false);
-    SetGlyphVisible((ImWchar)'\t', false);
+    if (ImFontGlyph* glyph = (ImFontGlyph*)(void*)FindGlyph((ImWchar)' '))
+        glyph->Visible = false;
+    if (ImFontGlyph* glyph = (ImFontGlyph*)(void*)FindGlyph((ImWchar)'\t'))
+        glyph->Visible = false;
 
     // Setup Fallback character
     const ImWchar fallback_chars[] = { (ImWchar)IM_UNICODE_CODEPOINT_INVALID, (ImWchar)'?', (ImWchar)' ' };
@@ -3827,12 +3817,6 @@ bool ImFont::IsGlyphRangeUnused(unsigned int c_begin, unsigned int c_last)
     return true;
 }
 
-void ImFont::SetGlyphVisible(ImWchar c, bool visible)
-{
-    if (ImFontGlyph* glyph = (ImFontGlyph*)(void*)FindGlyph((ImWchar)c))
-        glyph->Visible = visible ? 1 : 0;
-}
-
 void ImFont::GrowIndex(int new_size)
 {
     IM_ASSERT(IndexAdvanceX.Size == IndexLookup.Size);
@@ -3863,8 +3847,8 @@ void ImFont::AddGlyph(const ImFontConfig* cfg, ImWchar codepoint, float x0, floa
         if (cfg->PixelSnapH)
             advance_x = IM_ROUND(advance_x);
 
-        // Bake spacing
-        advance_x += cfg->GlyphExtraSpacing.x;
+        // Bake extra spacing
+        advance_x += cfg->GlyphExtraAdvanceX;
     }
 
     int glyph_idx = Glyphs.Size;
@@ -3907,7 +3891,7 @@ void ImFont::AddRemapChar(ImWchar dst, ImWchar src, bool overwrite_dst)
 }
 
 // Find glyph, return fallback if missing
-const ImFontGlyph* ImFont::FindGlyph(ImWchar c)
+ImFontGlyph* ImFont::FindGlyph(ImWchar c)
 {
     if (c >= (size_t)IndexLookup.Size)
         return FallbackGlyph;
@@ -3917,7 +3901,7 @@ const ImFontGlyph* ImFont::FindGlyph(ImWchar c)
     return &Glyphs.Data[i];
 }
 
-const ImFontGlyph* ImFont::FindGlyphNoFallback(ImWchar c)
+ImFontGlyph* ImFont::FindGlyphNoFallback(ImWchar c)
 {
     if (c >= (size_t)IndexLookup.Size)
         return NULL;
