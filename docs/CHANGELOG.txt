@@ -166,6 +166,9 @@ Other Changes:
 - Misc:
   - Minor optimization: reduce redudant label scanning in common widgets.
   - Added missing Test Engine hooks for PlotXXX(), VSliderXXX(), TableHeader().
+- Demo:
+  - Added simple demo for a scrollable/zoomable image viewer with a grid.
+    Available in `Examples->Image Viewer` and `Widgets->Images`.
 - Backends:
   - Added support for new standardized draw callbacks in most backends: (#9378)
     - Allegro5:     Reset     n/a               n/a
