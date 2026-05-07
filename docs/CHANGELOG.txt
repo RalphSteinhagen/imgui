@@ -156,6 +156,10 @@ Other Changes:
   - SetItemKeyOwner(): return true if ownership has been requested, which typically
     needs to to checked for gating further tests. This is important as the function
     may fail. (#456, #2637, #2620, #2891, #3370, #3724, #4828, #5108, #5242, #5641)
+  - SetItemKeyOwner(): does not set ownership is key is already taken. Effectively
+    this makes using `SetItemKeyOwner(ImGuiKey_MouseWheelY)` over an item work as
+    expected while not having item react if a scroll wheel is actively in progress.
+    May be subject to further redesign, e.g. conditional flags. Feedback welcome!
 - Style:
   - Fixed vertical scrollbar top coordinates when using thick borders on windows
     with no title bar and no menu bar. (#9366)

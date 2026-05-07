@@ -10726,6 +10726,8 @@ bool ImGui::SetItemKeyOwner(ImGuiKey key, ImGuiInputFlags flags)
     if ((g.HoveredId == id && (flags & ImGuiInputFlags_CondHovered)) || (g.ActiveId == id && (flags & ImGuiInputFlags_CondActive)))
     {
         IM_ASSERT((flags & ~ImGuiInputFlags_SupportedBySetItemKeyOwner) == 0); // Passing flags not supported by this function!
+        if (!TestKeyOwner(key, id))
+            return false;
         SetKeyOwner(key, id, flags & ~ImGuiInputFlags_CondMask_);
         return true;
     }
