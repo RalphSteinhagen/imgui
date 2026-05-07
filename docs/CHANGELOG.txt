@@ -111,6 +111,8 @@ Other Changes:
   - Detect and report error when calling End() instead of EndPopup() on a popup. (#9351)
   - Child windows with only ImGuiChildFlags_AutoResizeY flag keep using the proportional
     default ItemWidth. (#9355)
+  - Using mouse wheel to scroll takes and keeps ownership of the corresponding keys
+    (ImGuiKey_MouseWheelX/Y) while a wheeling window is locked. (#2604, #3795)
 - InputInt, InputFloat, InputScalar: reinstated ImGuiInputTextFlags_EnterReturnsTrue
   support which was removed in 1.91.4. (#8665, #9299, #8065, #3946, #6284, #9117)
   - Fixed the fact that it didn't return true when validating same value.
